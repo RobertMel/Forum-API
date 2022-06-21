@@ -64,25 +64,21 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(r.Body)
 	dec.Decode(&user)
 
-	query := fmt.Sprintf("SELECT id, user_pseudo FROM user WHERE Email = '%s' AND WHERE user_mdp = '%s' ", user.Email, user.Password)
+	query := fmt.Sprintf("SELECT id, user_pseudo FROM user WHERE Email = '%s' AND user_mdp = '%s' ", user.Email, user.Password)
 
 	rows := db.QueryRow(query)
-
-	rows.Scan(&user.User_id, &user.Name)
-
-	if user.User_id != 0 {
+	var userID int
+	rows.Scan(&userID, &user.Name)
+	fmt.Println(user)
+	if userID == 0 {
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
-
 	token := uuid.New().String()
-
-	querysession := fmt.Sprintf("INSERT INTO session (user_id, token) VALUES ('%d','%s'  ", user.User_id, token)
-
-	db.QueryRow(querysession)
-
+	querysession := fmt.Sprintf("INSERT INTO session (user_id, token) VALUES ('%d','%s')", userID, token)
+	db.Exec(querysession)
 	response, _ := json.Marshal(TokenResponse{Token: token, UserName: user.Name})
 	w.Write(response)
-
 }
 
 func Registerhandler(w http.ResponseWriter, r *http.Request) {
@@ -127,7 +123,7 @@ w.Write(response)
 */
 
 func main() {
-	db, _ = sql.Open("mysql", "root:root@tcp(localhost:8889)/DataBaseFRM")
+	db, _ = sql.Open("mysql", "root:@tcp(localhost)/robert")
 
 	// http.handler
 
